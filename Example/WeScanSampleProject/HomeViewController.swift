@@ -160,7 +160,7 @@ extension HomeViewController: ImageScannerControllerDelegate {
         assertionFailure("Error occurred: \(error)")
     }
 
-    func imageScannerController(_ scanner: ImageScannerController, didFinishScanningWithResults results: ImageScannerResults) {
+    func imageScannerController(_ scanner: ImageScannerController, didFinishScanningWithResults results: URL) {
         scanner.dismiss(animated: true, completion: nil)
     }
 
