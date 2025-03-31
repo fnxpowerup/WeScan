@@ -176,20 +176,8 @@ final class EditScanViewController: UIViewController {
             "inputBottomRight": CIVector(cgPoint: cartesianScaledQuad.topRight)
         ])
 
-        let croppedImage = UIImage.from(ciImage: filteredImage)
-        // Enhanced Image
-        let enhancedImage = filteredImage.applyingAdaptiveThreshold()?.withFixedOrientation()
-        let enhancedScan = enhancedImage.flatMap { ImageScannerScan(image: $0) }
-
-        let results = ImageScannerResults(
-            detectedRectangle: scaledQuad,
-            originalScan: ImageScannerScan(image: image),
-            croppedScan: ImageScannerScan(image: croppedImage),
-            enhancedScan: enhancedScan
-        )
-
-        let reviewViewController = ReviewViewController(results: results)
-        navigationController?.pushViewController(reviewViewController, animated: true)
+        CaptureSession.current.images.append(UIImage.from(ciImage: filteredImage))
+        navigationController?.popViewController(animated: true)
     }
 
     private func displayQuad() {

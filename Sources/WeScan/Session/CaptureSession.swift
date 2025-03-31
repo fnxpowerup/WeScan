@@ -8,6 +8,7 @@
 
 import AVFoundation
 import Foundation
+import UIKit
 
 /// A class containing global variables and settings for this capture session
 final class CaptureSession {
@@ -25,6 +26,8 @@ final class CaptureSession {
 
     /// The orientation of the captured image
     var editImageOrientation: CGImagePropertyOrientation
+    
+    var images: [UIImage]
 
     private init(isAutoScanEnabled: Bool = true, editImageOrientation: CGImagePropertyOrientation = .up) {
         self.device = AVCaptureDevice.default(for: .video)
@@ -32,6 +35,7 @@ final class CaptureSession {
         self.isEditing = false
         self.isAutoScanEnabled = isAutoScanEnabled
         self.editImageOrientation = editImageOrientation
+        self.images = []
     }
 
 }
