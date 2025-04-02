@@ -377,7 +377,26 @@ extension ScannerViewController: RectangleDetectionDelegateProtocol {
         activityIndicator.stopAnimating()
 
         if (CaptureSession.current.isAutoScanEnabled) {
-            CaptureSession.current.images.append(picture)
+            let newquad = quad ?? quadView.quad;
+            guard let ciImage = CIImage(image: picture) else {
+                    if let imageScannerController = navigationController as? ImageScannerController {
+                        let error = ImageScannerControllerError.ciImageCreation
+                        imageScannerController.imageScannerDelegate?.imageScannerController(imageScannerController, didFailWithError: error)
+                    }
+                    return
+            }
+            let cgOrientation = CGImagePropertyOrientation(picture.imageOrientation)
+            let orientedImage = ciImage.oriented(forExifOrientation: Int32(cgOrientation.rawValue))
+            var cartesianScaledQuad = newquad?.toCartesian(withHeight: picture.size.height) ?? Quadrilateral(rectangleFeature: CIRectangleFeature())
+            cartesianScaledQuad.reorganize()
+
+            let filteredImage = orientedImage.applyingFilter("CIPerspectiveCorrection", parameters: [
+                "inputTopLeft": CIVector(cgPoint: cartesianScaledQuad.bottomLeft),
+                "inputTopRight": CIVector(cgPoint: cartesianScaledQuad.bottomRight),
+                "inputBottomLeft": CIVector(cgPoint: cartesianScaledQuad.topLeft),
+                "inputBottomRight": CIVector(cgPoint: cartesianScaledQuad.topRight)
+            ])
+            CaptureSession.current.images.append(UIImage.from(ciImage: filteredImage))
             refreshScanView()
         } else {
             let editVC = EditScanViewController(image: picture, quad: quad)
