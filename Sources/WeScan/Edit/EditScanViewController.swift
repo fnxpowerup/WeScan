@@ -17,7 +17,7 @@ final class EditScanViewController: UIViewController {
         imageView.clipsToBounds = true
         imageView.isOpaque = true
         imageView.image = image
-        imageView.backgroundColor = .black
+        imageView.backgroundColor = .systemBackground
         imageView.contentMode = .scaleAspectFit
         imageView.translatesAutoresizingMaskIntoConstraints = false
         return imageView
@@ -30,27 +30,23 @@ final class EditScanViewController: UIViewController {
         return quadView
     }()
 
-    private lazy var nextButton: UIBarButtonItem = {
-        let title = NSLocalizedString("wescan.edit.button.next",
-                                      tableName: nil,
-                                      bundle: Bundle(for: EditScanViewController.self),
-                                      value: "Next",
-                                      comment: "A generic next button"
-        )
-        let button = UIBarButtonItem(title: title, style: .plain, target: self, action: #selector(pushReviewController))
-        button.tintColor = .white
+    private lazy var keepScanButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.setTitle("Keep Scan", for: .normal)
+        button.titleLabel?.font =  UIFont.systemFont(ofSize: 17, weight: .heavy)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.addTarget(self, action: #selector(keepScan), for: .touchUpInside)
+        button.tintColor = UIColor.label
         return button
     }()
 
-    private lazy var cancelButton: UIBarButtonItem = {
-        let title = NSLocalizedString("wescan.scanning.cancel",
-                                      tableName: nil,
-                                      bundle: Bundle(for: EditScanViewController.self),
-                                      value: "Cancel",
-                                      comment: "A generic cancel button"
-        )
-        let button = UIBarButtonItem(title: title, style: .plain, target: self, action: #selector(cancelButtonTapped))
-        button.tintColor = .white
+    private lazy var retakeButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.setTitle("Retake", for: .normal)
+        button.titleLabel?.font =  UIFont.systemFont(ofSize: 17, weight: .medium)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.addTarget(self, action: #selector(retakeButtonTapped), for: .touchUpInside)
+        button.tintColor = UIColor.label
         return button
     }()
 
@@ -82,24 +78,17 @@ final class EditScanViewController: UIViewController {
 
         setupViews()
         setupConstraints()
-        title = NSLocalizedString("wescan.edit.title",
-                                  tableName: nil,
-                                  bundle: Bundle(for: EditScanViewController.self),
-                                  value: "Edit Scan",
-                                  comment: "The title of the EditScanViewController"
-        )
-        navigationItem.rightBarButtonItem = nextButton
-        if let firstVC = self.navigationController?.viewControllers.first, firstVC == self {
-            navigationItem.leftBarButtonItem = cancelButton
-        } else {
-            navigationItem.leftBarButtonItem = nil
-        }
 
         zoomGestureController = ZoomGestureController(image: image, quadView: quadView)
-
+        
         let touchDown = UILongPressGestureRecognizer(target: zoomGestureController, action: #selector(zoomGestureController.handle(pan:)))
         touchDown.minimumPressDuration = 0
-        view.addGestureRecognizer(touchDown)
+        quadView.addGestureRecognizer(touchDown)
+    }
+    
+    override public func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        navigationController?.setNavigationBarHidden(true, animated: animated)
     }
 
     override public func viewDidLayoutSubviews() {
@@ -110,10 +99,7 @@ final class EditScanViewController: UIViewController {
 
     override public func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
-
-        // Work around for an iOS 11.2 bug where UIBarButtonItems don't get back to their normal state after being pressed.
-        navigationController?.navigationBar.tintAdjustmentMode = .normal
-        navigationController?.navigationBar.tintAdjustmentMode = .automatic
+        navigationController?.setNavigationBarHidden(false, animated: animated)
     }
 
     // MARK: - Setups
@@ -121,6 +107,8 @@ final class EditScanViewController: UIViewController {
     private func setupViews() {
         view.addSubview(imageView)
         view.addSubview(quadView)
+        view.addSubview(keepScanButton)
+        view.addSubview(retakeButton)
     }
 
     private func setupConstraints() {
@@ -130,6 +118,8 @@ final class EditScanViewController: UIViewController {
             view.bottomAnchor.constraint(equalTo: imageView.bottomAnchor),
             view.leadingAnchor.constraint(equalTo: imageView.leadingAnchor)
         ]
+        var retakeButtonConstraints = [NSLayoutConstraint]()
+        var keepScanButtonConstraints = [NSLayoutConstraint]()
 
         quadViewWidthConstraint = quadView.widthAnchor.constraint(equalToConstant: 0.0)
         quadViewHeightConstraint = quadView.heightAnchor.constraint(equalToConstant: 0.0)
@@ -140,18 +130,28 @@ final class EditScanViewController: UIViewController {
             quadViewWidthConstraint,
             quadViewHeightConstraint
         ]
+        
+        keepScanButtonConstraints = [
+            keepScanButton.rightAnchor.constraint(equalTo: view.safeAreaLayoutGuide.rightAnchor, constant: -24.0),
+            view.safeAreaLayoutGuide.bottomAnchor.constraint(equalTo: keepScanButton.bottomAnchor, constant: (65.0 / 2) - 10.0)
+        ]
+        
+        retakeButtonConstraints = [
+            retakeButton.leftAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leftAnchor, constant: 24.0),
+            view.safeAreaLayoutGuide.bottomAnchor.constraint(equalTo: retakeButton.bottomAnchor, constant: (65.0 / 2) - 10.0)
+        ]
 
-        NSLayoutConstraint.activate(quadViewConstraints + imageViewConstraints)
+        NSLayoutConstraint.activate(quadViewConstraints + imageViewConstraints + retakeButtonConstraints + keepScanButtonConstraints)
     }
 
     // MARK: - Actions
-    @objc func cancelButtonTapped() {
+    @objc func retakeButtonTapped() {
         if let imageScannerController = navigationController as? ImageScannerController {
-            imageScannerController.imageScannerDelegate?.imageScannerControllerDidCancel(imageScannerController)
+            imageScannerController.popViewController(animated: true)
         }
     }
 
-    @objc func pushReviewController() {
+    @objc func keepScan() {
         guard let quad = quadView.quad,
             let ciImage = CIImage(image: image) else {
                 if let imageScannerController = navigationController as? ImageScannerController {

@@ -38,4 +38,15 @@ final class CaptureSession {
         self.images = []
     }
 
+    public func getImages() -> [UIImage] {
+        return self.images
+    }
+    
+    public func getImagesCount() -> Int {
+        return self.images.count
+    }
+    
+    public func hasImages() -> Bool {
+        return self.images.count > 0
+    }
 }
